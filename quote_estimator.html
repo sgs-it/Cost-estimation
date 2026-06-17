@@ -1,0 +1,1827 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Italian Planters — Real-Time Quote Estimator</title>
+  <meta name="description"
+    content="Real-time cost estimation system for AMC and Project landscaping works. Enter site details and get instant pricing calculations." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap"
+    rel="stylesheet" />
+  <style>
+    /* ─── DESIGN SYSTEM ─────────────────────────────────────── */
+    :root {
+      --bg-deep:       #0a0f1e;
+      --bg-card:       #111827;
+      --bg-glass:      rgba(17, 24, 39, 0.85);
+      --bg-input:      rgba(255, 255, 255, 0.07);
+      --bg-hover:      rgba(255, 255, 255, 0.10);
+      --accent-g1:     #00c896;
+      --accent-g2:     #0ea5e9;
+      --accent-amber:  #f59e0b;
+      --accent-rose:   #f43f5e;
+      --accent-violet: #8b5cf6;
+      --text-primary:   #f1f5f9;   /* main white — unchanged */
+      --text-secondary: #c8d6e8;   /* was #94a3b8 — much brighter */
+      --text-muted:     #8b9ab5;   /* was #475569 — nearly 2× brighter */
+      --border:        rgba(255, 255, 255, 0.10);
+      --border-focus:  rgba(0, 200, 150, 0.5);
+      --shadow-card:   0 25px 50px rgba(0, 0, 0, 0.5);
+      --radius-sm:     8px;
+      --radius-md:     12px;
+      --radius-lg:     20px;
+    }
+
+    *,
+    *::before,
+    *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--bg-deep);
+      color: var(--text-primary);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ─── ANIMATED BACKGROUND ───────────────────────────────── */
+    .bg-orbs {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      overflow: hidden;
+    }
+
+    .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.12;
+      animation: drift 18s ease-in-out infinite;
+    }
+
+    .orb-1 {
+      width: 600px;
+      height: 600px;
+      background: var(--accent-g1);
+      top: -200px;
+      left: -200px;
+      animation-delay: 0s;
+    }
+
+    .orb-2 {
+      width: 500px;
+      height: 500px;
+      background: var(--accent-g2);
+      top: 30%;
+      right: -150px;
+      animation-delay: -6s;
+    }
+
+    .orb-3 {
+      width: 400px;
+      height: 400px;
+      background: var(--accent-violet);
+      bottom: -100px;
+      left: 30%;
+      animation-delay: -12s;
+    }
+
+    @keyframes drift {
+
+      0%,
+      100% {
+        transform: translate(0, 0) scale(1);
+      }
+
+      33% {
+        transform: translate(30px, -40px) scale(1.05);
+      }
+
+      66% {
+        transform: translate(-20px, 30px) scale(0.95);
+      }
+    }
+
+    /* ─── LAYOUT ─────────────────────────────────────────────── */
+    .app-wrap {
+      position: relative;
+      z-index: 1;
+      max-width: 1280px;
+      margin: 0 auto;
+      padding: 0 24px 60px;
+    }
+
+    /* ─── HEADER ─────────────────────────────────────────────── */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 28px 0 36px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-g1), var(--accent-g2));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: 0 8px 24px rgba(0, 200, 150, 0.3);
+      animation: pulse-glow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulse-glow {
+
+      0%,
+      100% {
+        box-shadow: 0 8px 24px rgba(0, 200, 150, 0.3);
+      }
+
+      50% {
+        box-shadow: 0 8px 32px rgba(0, 200, 150, 0.6);
+      }
+    }
+
+    .logo-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent-g1), var(--accent-g2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .logo-text p {
+      font-size: 12px;
+      color: #a0b4cc;
+      margin-top: 2px;
+    }
+
+    .status-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      border-radius: 100px;
+      border: 1px solid rgba(255,255,255,0.15);
+      font-size: 12px;
+      color: #c8d6e8;
+      background: var(--bg-card);
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--accent-g1);
+      animation: blink 2s ease-in-out infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        opacity: 1
+      }
+
+      50% {
+        opacity: 0.3
+      }
+    }
+
+    /* ─── JOB TYPE SELECTOR ──────────────────────────────────── */
+    .section-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 12px;
+      font-weight: 700;
+      letter-spacing: 1.8px;
+      text-transform: uppercase;
+      color: #a8bbcc;
+      margin-bottom: 16px;
+    }
+
+    .job-tabs {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 36px;
+    }
+
+    .job-tab {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 18px 16px;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .job-tab::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(135deg, var(--accent-g1), var(--accent-g2));
+      opacity: 0;
+      transition: opacity 0.25s ease;
+    }
+
+    .job-tab:hover::before {
+      opacity: 0.07;
+    }
+
+    .job-tab.active {
+      border-color: var(--accent-g1);
+      box-shadow: 0 0 0 1px var(--accent-g1), inset 0 0 20px rgba(0, 200, 150, 0.05);
+    }
+
+    .job-tab.active::before {
+      opacity: 0.1;
+    }
+
+    .tab-icon {
+      font-size: 26px;
+      position: relative;
+      z-index: 1;
+    }
+
+    .tab-label {
+      font-size: 13px;
+      font-weight: 600;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+      color: #cbd5e1;   /* bright enough on dark card */
+    }
+
+    .tab-sub {
+      font-size: 11px;
+      color: #8b9ab5;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .job-tab.active .tab-label {
+      color: var(--accent-g1);
+    }
+
+    .job-tab:hover .tab-label {
+      color: #e2ecf5;
+    }
+
+    /* ─── MAIN GRID ──────────────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 1.1fr;
+      gap: 24px;
+      align-items: start;
+    }
+
+    /* ─── CARD ───────────────────────────────────────────────── */
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 28px;
+      box-shadow: var(--shadow-card);
+    }
+
+    .card-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .card-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: var(--radius-sm);
+      background: linear-gradient(135deg, var(--accent-g1)22, var(--accent-g2)22);
+      border: 1px solid var(--accent-g1)44;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .card-title {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      color: #f1f5f9;
+    }
+
+    .card-sub {
+      font-size: 12px;
+      color: #9bafc5;
+      margin-top: 2px;
+    }
+
+    /* ─── FORM FIELDS ────────────────────────────────────────── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 16px;
+    }
+
+    .form-row.single {
+      grid-template-columns: 1fr;
+    }
+
+    .form-row.triple {
+      grid-template-columns: 1fr 1fr 1fr;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .field label {
+      font-size: 11px;
+      font-weight: 700;
+      color: #9fb3ca;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .field input,
+    .field select {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 10px 14px;
+      font-size: 14px;
+      color: var(--text-primary);
+      font-family: 'Inter', sans-serif;
+      transition: all 0.2s ease;
+      outline: none;
+      width: 100%;
+    }
+
+    .field input:focus,
+    .field select:focus {
+      border-color: var(--accent-g1);
+      box-shadow: 0 0 0 3px rgba(0, 200, 150, 0.12);
+      background: rgba(0, 200, 150, 0.04);
+    }
+
+    .field input::placeholder { color: #5e7490; }
+    .field select option { background: #1e293b; color: #f1f5f9; }
+
+    /* Item row (for dynamic items) */
+    .items-container {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .item-row {
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 14px;
+      display: grid;
+      gap: 10px;
+      position: relative;
+    }
+
+    .item-row.indoor-amc-row {
+      grid-template-columns: 2fr 1fr 1fr;
+    }
+
+    .item-row.indoor-proj-row {
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+    }
+
+    .item-row.outdoor-proj-row {
+      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 36px;
+    }
+
+    .item-field input {
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--border);
+      border-radius: 0;
+      padding: 4px 0;
+      font-size: 13px;
+      color: var(--text-primary);
+      width: 100%;
+    }
+
+    .item-field input:focus {
+      border-bottom-color: var(--accent-g1);
+      box-shadow: none;
+      background: transparent;
+    }
+
+    .item-field label {
+      font-size: 10px;
+      color: #8ba4bc;
+      letter-spacing: 0.5px;
+      font-weight: 600;
+    }
+
+    .btn-remove {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--radius-sm);
+      background: rgba(244, 63, 94, 0.15);
+      border: 1px solid rgba(244, 63, 94, 0.3);
+      color: var(--accent-rose);
+      cursor: pointer;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s;
+      margin-top: auto;
+      align-self: flex-end;
+    }
+
+    .btn-remove:hover {
+      background: rgba(244, 63, 94, 0.3);
+    }
+
+    .btn-add-item {
+      width: 100%;
+      padding: 10px;
+      background: transparent;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-secondary);
+      font-size: 13px;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Inter', sans-serif;
+    }
+
+    .btn-add-item:hover {
+      border-color: var(--accent-g1);
+      color: var(--accent-g1);
+      background: rgba(0, 200, 150, 0.04);
+    }
+
+    /* Divider */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    /* ─── ACTION BUTTONS ─────────────────────────────────────── */
+    .btn-row {
+      display: flex;
+      gap: 12px;
+    }
+
+    .btn-estimate {
+      flex: 1;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent-g1), var(--accent-g2));
+      border: none;
+      border-radius: var(--radius-md);
+      font-size: 15px;
+      font-weight: 700;
+      color: #0a0f1e;
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      letter-spacing: 0.5px;
+    }
+
+    .btn-estimate:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 12px 32px rgba(0, 200, 150, 0.4);
+    }
+
+    .btn-estimate:active {
+      transform: translateY(0);
+    }
+
+    .btn-estimate.loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(10, 15, 30, 0.3);
+      border-top-color: #0a0f1e;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-estimate.loading .spinner {
+      display: block;
+    }
+
+    .btn-estimate.loading .btn-text::after {
+      content: '...';
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+
+    .btn-export {
+      padding: 16px 20px;
+      background: transparent;
+      border: 1px solid var(--accent-g1);
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--accent-g1);
+      font-family: 'Space Grotesk', sans-serif;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      white-space: nowrap;
+      min-width: 160px;
+    }
+
+    .btn-export:hover:not(:disabled) {
+      background: rgba(0, 200, 150, 0.1);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0, 200, 150, 0.25);
+    }
+
+    .btn-export:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+      border-color: var(--text-muted);
+      color: var(--text-muted);
+    }
+
+    .btn-export.loading {
+      opacity: 0.6;
+      pointer-events: none;
+    }
+
+    .btn-export .export-spinner {
+      width: 14px;
+      height: 14px;
+      border: 2px solid rgba(0, 200, 150, 0.3);
+      border-top-color: var(--accent-g1);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+    }
+
+    .btn-export.loading .export-spinner {
+      display: block;
+    }
+
+    .btn-export.loading .export-icon {
+      display: none;
+    }
+
+    /* ─── RESULTS PANEL ──────────────────────────────────────── */
+    .results-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+
+    /* Empty state */
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 20px;
+      color: #8b9ab5;
+      text-align: center;
+    }
+
+    .empty-state .big-icon {
+      font-size: 52px;
+      margin-bottom: 16px;
+      opacity: 0.4;
+    }
+
+    .empty-state p {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* Metric cards */
+    .metric-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric-card {
+      background: linear-gradient(135deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 18px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
+    }
+
+    .metric-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, var(--accent-g1), var(--accent-g2));
+    }
+
+    .metric-card.highlight {
+      background: linear-gradient(135deg, rgba(0, 200, 150, 0.08), rgba(14, 165, 233, 0.04));
+      border-color: var(--accent-g1)44;
+    }
+
+    .metric-card.highlight::before {
+      background: linear-gradient(90deg, var(--accent-g1), #00e8b5);
+    }
+
+    .metric-card.amber {
+      border-color: rgba(245, 158, 11, 0.3);
+    }
+
+    .metric-card.amber::before {
+      background: linear-gradient(90deg, var(--accent-amber), #fcd34d);
+    }
+
+    .metric-label {
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      color: #9fb3ca;   /* was var(--text-muted) — now clearly readable */
+      margin-bottom: 8px;
+    }
+
+    .metric-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .metric-value.large {
+      font-size: 28px;
+      color: var(--accent-g1);
+    }
+
+    .metric-sub {
+      font-size: 11px;
+      color: #8ba4bc;   /* was var(--text-muted) — now visible */
+      margin-top: 4px;
+    }
+
+    /* Year breakdown cards */
+    .year-strip {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+
+    .year-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px;
+      text-align: center;
+    }
+
+    .year-label {
+      font-size: 11px;
+      color: #9fb3ca;   /* was var(--text-muted) — now readable */
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+
+    .year-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    /* Cost breakdown table */
+    .breakdown-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .breakdown-table tr {
+      border-bottom: 1px solid var(--border);
+    }
+
+    .breakdown-table tr:last-child {
+      border-bottom: none;
+    }
+
+    .breakdown-table td {
+      padding: 10px 0;
+      font-size: 13px;
+    }
+
+    .breakdown-table td:last-child {
+      text-align: right;
+      font-family: 'Space Grotesk', sans-serif;
+      font-weight: 600;
+    }
+
+    .breakdown-table tr.total-row td {
+      font-weight: 700;
+      color: var(--accent-g1);
+      font-size: 14px;
+      padding-top: 14px;
+    }
+
+    .breakdown-table td .row-label {
+      color: #c0d2e5;   /* was var(--text-secondary) — bright white-blue */
+    }
+
+    .breakdown-table td .row-pct {
+      font-size: 11px;
+      color: #8ba4bc;   /* was var(--text-muted) */
+      margin-left: 6px;
+    }
+
+    /* Manifest table */
+    .manifest-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 12px;
+    }
+
+    .manifest-table th {
+      text-align: left;
+      color: #9fb3ca;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      font-size: 10px;
+      letter-spacing: 0.8px;
+      text-transform: uppercase;
+    }
+
+    .manifest-table td {
+      padding: 8px 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+      color: #dce8f4;   /* near-white — fully readable */
+    }
+
+    .manifest-table td:last-child {
+      text-align: right;
+      font-weight: 600;
+      color: var(--accent-g1);
+    }
+
+    .manifest-table tr:hover td {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    /* Summary pills */
+    .summary-pills {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+
+    .pill {
+      padding: 6px 14px;
+      border-radius: 100px;
+      font-size: 12px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255,255,255,0.15);
+      color: #c8d6e8;   /* was var(--text-secondary) — now bright */
+    }
+
+    .pill.green {
+      background: rgba(0, 200, 150, 0.12);
+      border-color: rgba(0, 200, 150, 0.3);
+      color: var(--accent-g1);
+    }
+
+    .pill.blue {
+      background: rgba(14, 165, 233, 0.12);
+      border-color: rgba(14, 165, 233, 0.3);
+      color: var(--accent-g2);
+    }
+
+    .pill.amber {
+      background: rgba(245, 158, 11, 0.12);
+      border-color: rgba(245, 158, 11, 0.3);
+      color: var(--accent-amber);
+    }
+
+    /* ─── HIDDEN PANELS ──────────────────────────────────────── */
+    .panel {
+      display: none;
+    }
+
+    .panel.active {
+      display: block;
+    }
+
+    /* ─── TOAST ──────────────────────────────────────────────── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      right: 28px;
+      z-index: 1000;
+      padding: 14px 20px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      font-weight: 600;
+      color: #fff;
+      transform: translateY(80px);
+      opacity: 0;
+      transition: all 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+      max-width: 360px;
+    }
+
+    .toast.show {
+      transform: translateY(0);
+      opacity: 1;
+    }
+
+    .toast.error {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.4);
+    }
+
+    .toast.success {
+      background: linear-gradient(135deg, var(--accent-g1), #00b07a);
+      box-shadow: 0 8px 24px rgba(0, 200, 150, 0.4);
+    }
+
+    /* ─── SCROLLBAR ──────────────────────────────────────────── */
+    ::-webkit-scrollbar {
+      width: 6px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 3px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    /* ─── RESPONSIVE ─────────────────────────────────────────── */
+    @media (max-width: 900px) {
+      .main-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .job-tabs {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-row {
+        grid-template-columns: 1fr;
+      }
+
+      .form-row.triple {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .year-strip {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .job-tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .metric-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .item-row.indoor-proj-row,
+      .item-row.outdoor-proj-row {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Ambient background -->
+  <div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+  </div>
+
+  <div class="app-wrap">
+
+    <!-- HEADER -->
+    <header>
+      <div class="logo">
+        <div class="logo-icon">🌿</div>
+        <div class="logo-text">
+          <h1>Italian Planters — Quote Estimator</h1>
+          <p>Real-time pricing system · AMC &amp; Project works</p>
+        </div>
+      </div>
+      <div class="status-badge">
+        <span class="status-dot"></span>
+        <span id="engineStatus">Connecting to pricing engine…</span>
+      </div>
+    </header>
+
+    <!-- JOB TYPE TABS -->
+    <p class="section-title">Select Job Type</p>
+    <div class="job-tabs" role="tablist">
+      <button class="job-tab active" id="tab-amc_outdoor" onclick="setJobType('amc_outdoor')" role="tab"
+        aria-selected="true">
+        <span class="tab-icon">🏡</span>
+        <span class="tab-label">Outdoor AMC</span>
+        <span class="tab-sub">Landscaping Maintenance</span>
+      </button>
+      <button class="job-tab" id="tab-amc_indoor" onclick="setJobType('amc_indoor')" role="tab">
+        <span class="tab-icon">🪴</span>
+        <span class="tab-label">Indoor AMC</span>
+        <span class="tab-sub">Interior Plant Maintenance</span>
+      </button>
+      <button class="job-tab" id="tab-project_outdoor" onclick="setJobType('project_outdoor')" role="tab">
+        <span class="tab-icon">🌳</span>
+        <span class="tab-label">Project — Outdoor</span>
+        <span class="tab-sub">PTO / VOO Works</span>
+      </button>
+      <button class="job-tab" id="tab-project_indoor" onclick="setJobType('project_indoor')" role="tab">
+        <span class="tab-icon">🎍</span>
+        <span class="tab-label">Project — Indoor</span>
+        <span class="tab-sub">PTI / VOI Works</span>
+      </button>
+    </div>
+
+    <!-- MAIN GRID -->
+    <div class="main-grid">
+
+      <!-- ── LEFT: INPUT FORM ── -->
+      <div>
+        <div class="card">
+          <div class="card-header">
+            <div class="card-icon">📋</div>
+            <div>
+              <div class="card-title">Site &amp; Job Details</div>
+              <div class="card-sub">Enter location and inventory parameters</div>
+            </div>
+          </div>
+
+          <!-- Common Fields -->
+          <div class="form-row">
+            <div class="field">
+              <label for="siteName">Site / Location Name</label>
+              <input type="text" id="siteName" placeholder="e.g. Oberoi Tower, Dubai Marina" />
+            </div>
+            <div class="field">
+              <label for="clientName">Client / Company Name</label>
+              <input type="text" id="clientName" placeholder="e.g. Asteco Asset Management" />
+            </div>
+          </div>
+
+          <div class="divider"></div>
+
+          <!-- ── PANEL: AMC OUTDOOR ── -->
+          <div class="panel active" id="panel-amc_outdoor">
+            <p class="section-title" style="margin-bottom:14px">Landscape Inventory</p>
+            <div class="form-row">
+              <div class="field">
+                <label for="o-palms">Palm Trees (nos)</label>
+                <input type="number" id="o-palms" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-trees">Ornamental Trees (nos)</label>
+                <input type="number" id="o-trees" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+            </div>
+            <div class="form-row triple">
+              <div class="field">
+                <label for="o-shrubs">Shrubs Area (m²)</label>
+                <input type="number" id="o-shrubs" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-gc">Groundcovers (m²)</label>
+                <input type="number" id="o-gc" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-lawn">Lawn / Grass (m²)</label>
+                <input type="number" id="o-lawn" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="field">
+                <label for="o-flowers">Seasonal Flowers (nos/rotation)</label>
+                <input type="number" id="o-flowers" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-subcon">Subcontractor Cost (AED/yr, 0=auto)</label>
+                <input type="number" id="o-subcon" min="0" value="0" placeholder="0 = auto" oninput="liveEstimate()" />
+              </div>
+            </div>
+            <div class="divider"></div>
+            <p class="section-title" style="margin-bottom:14px">Commercial Settings</p>
+            <div class="form-row triple">
+              <div class="field">
+                <label for="o-margin">Margin (%)</label>
+                <input type="number" id="o-margin" min="0" max="50" step="0.5" value="10" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-overhead">Overhead (%)</label>
+                <input type="number" id="o-overhead" min="0" max="50" step="0.5" value="10" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-nego">Negotiation Buffer (%)</label>
+                <input type="number" id="o-nego" min="0" max="30" step="0.5" value="5" oninput="liveEstimate()" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── PANEL: AMC INDOOR ── -->
+          <div class="panel" id="panel-amc_indoor">
+            <p class="section-title" style="margin-bottom:14px">Plant Inventory (Monthly AMC)</p>
+            <div class="items-container" id="indoor-amc-items">
+              <!-- dynamic rows injected by JS -->
+            </div>
+            <button class="btn-add-item" onclick="addIndoorAmcItem()">+ Add Plant Line</button>
+            <div class="divider"></div>
+            <div class="form-row">
+              <div class="field">
+                <label for="ia-discount">Monthly Discount (AED)</label>
+                <input type="number" id="ia-discount" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── PANEL: PROJECT OUTDOOR ── -->
+          <div class="panel" id="panel-project_outdoor">
+            <p class="section-title" style="margin-bottom:14px">Bill of Quantities (Outdoor Works)</p>
+            <div class="items-container" id="outdoor-proj-items"></div>
+            <button class="btn-add-item" onclick="addOutdoorProjItem()">+ Add Work Item</button>
+            <div class="divider"></div>
+            <div class="form-row">
+              <div class="field">
+                <label for="po-oh">Overhead % on Material+Plant</label>
+                <input type="number" id="po-oh" value="10" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="po-discount">Discount (AED)</label>
+                <input type="number" id="po-discount" value="0" oninput="liveEstimate()" />
+              </div>
+            </div>
+          </div>
+
+          <!-- ── PANEL: PROJECT INDOOR ── -->
+          <div class="panel" id="panel-project_indoor">
+            <p class="section-title" style="margin-bottom:14px">Bill of Quantities (Indoor Plant Supply &amp; Install)
+            </p>
+            <div class="items-container" id="indoor-proj-items"></div>
+            <button class="btn-add-item" onclick="addIndoorProjItem()">+ Add Item</button>
+            <div class="divider"></div>
+            <div class="form-row">
+              <div class="field">
+                <label for="pi-discount">Discount (AED)</label>
+                <input type="number" id="pi-discount" value="0" oninput="liveEstimate()" />
+              </div>
+            </div>
+          </div>
+
+          <div style="height:20px"></div>
+          <div class="btn-row">
+            <button class="btn-estimate" id="btnEstimate" onclick="runEstimate()">
+              <div class="spinner" id="btnSpinner"></div>
+              <span class="btn-text">⚡ Generate Estimate</span>
+            </button>
+            <button class="btn-export" id="btnExport" onclick="exportExcel()" disabled
+              title="Generate an estimate first, then export">
+              <div class="export-spinner"></div>
+              <span class="export-icon">📥</span>
+              <span>Export Excel</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── RIGHT: RESULTS PANEL ── -->
+      <div class="results-panel" id="resultsPanel">
+
+        <!-- Empty state -->
+        <div class="card" id="emptyState">
+          <div class="empty-state">
+            <div class="big-icon">📊</div>
+            <p>Fill in the site details on the left and click <strong>Generate Estimate</strong> to see your real-time
+              cost breakdown.</p>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /main-grid -->
+
+  </div><!-- /app-wrap -->
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    // ─────────────────────────────────────────────────────────────────
+    // CONFIG
+    // ─────────────────────────────────────────────────────────────────
+    const API_BASE = 'http://localhost:5050';
+    let currentJobType = 'amc_outdoor';
+    let debounceTimer = null;
+
+    // ─── INIT ─────────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      // seed initial rows
+      addIndoorAmcItem();
+      addOutdoorProjItem();
+      addIndoorProjItem();
+
+      // ping backend
+      try {
+        const r = await fetch(API_BASE + '/ping', { signal: AbortSignal.timeout(3000) });
+        const j = await r.json();
+        if (j.status === 'ok') setStatus('Engine online', true);
+        else setStatus('Engine error', false);
+      } catch {
+        setStatus('Engine offline — start quote_api.py', false);
+      }
+    });
+
+    function setStatus(msg, ok) {
+      document.getElementById('engineStatus').textContent = msg;
+      document.querySelector('.status-dot').style.background = ok ? 'var(--accent-g1)' : 'var(--accent-rose)';
+    }
+
+    // ─── JOB TYPE SWITCH ──────────────────────────────────────────────
+    function setJobType(type) {
+      currentJobType = type;
+      document.querySelectorAll('.job-tab').forEach(t => t.classList.remove('active'));
+      document.getElementById('tab-' + type).classList.add('active');
+      document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+      document.getElementById('panel-' + type).classList.add('active');
+      clearResults();
+    }
+
+    // ─── DYNAMIC ROWS ─────────────────────────────────────────────────
+    let rowCounter = 0;
+
+    function addIndoorAmcItem() {
+      const id = ++rowCounter;
+      const el = document.createElement('div');
+      el.className = 'item-row indoor-amc-row';
+      el.id = 'ia-row-' + id;
+      el.innerHTML = `
+    <div class="item-field">
+      <label>Description</label>
+      <input type="text" placeholder="e.g. Free Stand Potted Plants - Lobby" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Qty (nos)</label>
+      <input type="number" min="0" value="1" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field" style="position:relative">
+      <label>Rate (AED/pot/month)</label>
+      <input type="number" min="0" value="15" oninput="liveEstimate()" />
+    </div>
+  `;
+      const rm = document.createElement('button');
+      rm.className = 'btn-remove'; rm.textContent = '✕';
+      rm.title = 'Remove row';
+      rm.onclick = () => { el.remove(); liveEstimate(); };
+      el.appendChild(rm);
+      document.getElementById('indoor-amc-items').appendChild(el);
+    }
+
+    function addOutdoorProjItem() {
+      const id = ++rowCounter;
+      const el = document.createElement('div');
+      el.className = 'item-row outdoor-proj-row';
+      el.id = 'op-row-' + id;
+      el.innerHTML = `
+    <div class="item-field">
+      <label>Description</label>
+      <input type="text" placeholder="e.g. Supply & Install Hibiscus" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Qty</label>
+      <input type="number" min="0" value="1" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Cost (AED)</label>
+      <input type="number" min="0" value="0" step="0.5" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Labor (AED)</label>
+      <input type="number" min="0" value="0" step="0.5" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Suprv (AED)</label>
+      <input type="number" min="0" value="0" step="0.5" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Plant (AED)</label>
+      <input type="number" min="0" value="0" step="0.5" oninput="liveEstimate()" />
+    </div>
+  `;
+      const rm = document.createElement('button');
+      rm.className = 'btn-remove'; rm.textContent = '✕';
+      rm.onclick = () => { el.remove(); liveEstimate(); };
+      el.appendChild(rm);
+      document.getElementById('outdoor-proj-items').appendChild(el);
+    }
+
+    function addIndoorProjItem() {
+      const id = ++rowCounter;
+      const el = document.createElement('div');
+      el.className = 'item-row indoor-proj-row';
+      el.id = 'ip-row-' + id;
+      el.innerHTML = `
+    <div class="item-field">
+      <label>Description</label>
+      <input type="text" placeholder="e.g. GRP Ceramic Pot + Ficus" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Qty (nos)</label>
+      <input type="number" min="0" value="1" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Pot (AED)</label>
+      <input type="number" min="0" value="0" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Main Plant (AED)</label>
+      <input type="number" min="0" value="0" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Under Plants</label>
+      <input type="number" min="0" value="0" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Soil+Hydro (AED)</label>
+      <input type="number" min="0" value="0" oninput="liveEstimate()" />
+    </div>
+  `;
+      const rm = document.createElement('button');
+      rm.className = 'btn-remove'; rm.textContent = '✕';
+      rm.onclick = () => { el.remove(); liveEstimate(); };
+      el.appendChild(rm);
+      document.getElementById('indoor-proj-items').appendChild(el);
+    }
+
+    // ─── BUILD CONFIG FROM FORM ───────────────────────────────────────
+    function buildConfig() {
+      const n = id => parseFloat(document.getElementById(id)?.value || 0) || 0;
+
+      if (currentJobType === 'amc_outdoor') {
+        return {
+          palms: n('o-palms'),
+          trees: n('o-trees'),
+          shrubs_m2: n('o-shrubs'),
+          gc_m2: n('o-gc'),
+          lawn_m2: n('o-lawn'),
+          seasonal_flowers: n('o-flowers'),
+          subcontractor_annual: n('o-subcon') || undefined,
+          margin_pct: n('o-margin') / 100,
+          overhead_pct: n('o-overhead') / 100,
+          nego_pct: n('o-nego') / 100,
+        };
+      }
+
+      if (currentJobType === 'amc_indoor') {
+        const rows = document.querySelectorAll('#indoor-amc-items .item-row');
+        const items = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          items.push({
+            description: inputs[0].value || 'Plant',
+            qty: parseFloat(inputs[1].value) || 0,
+            unit_rate: parseFloat(inputs[2].value) || 15,
+          });
+        });
+        return { items, discount_monthly: n('ia-discount') };
+      }
+
+      if (currentJobType === 'project_outdoor') {
+        const rows = document.querySelectorAll('#outdoor-proj-items .item-row');
+        const items = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          items.push({
+            description: inputs[0].value || 'Works',
+            qty: parseFloat(inputs[1].value) || 0,
+            cost: parseFloat(inputs[2].value) || 0,
+            labor: parseFloat(inputs[3].value) || 0,
+            suprv: parseFloat(inputs[4].value) || 0,
+            plant: parseFloat(inputs[5].value) || 0,
+          });
+        });
+        return { items, oh_pct: n('po-oh') / 100, discount: n('po-discount') };
+      }
+
+      if (currentJobType === 'project_indoor') {
+        const rows = document.querySelectorAll('#indoor-proj-items .item-row');
+        const items = [];
+        rows.forEach(row => {
+          const inputs = row.querySelectorAll('input');
+          items.push({
+            description: inputs[0].value || 'Indoor Plant',
+            qty: parseFloat(inputs[1].value) || 0,
+            pot: parseFloat(inputs[2].value) || 0,
+            main_plant: parseFloat(inputs[3].value) || 0,
+            under_plants: parseFloat(inputs[4].value) || 0,
+            soil_hydrostone: parseFloat(inputs[5].value) || 0,
+          });
+        });
+        return { items, discount: n('pi-discount') };
+      }
+      return {};
+    }
+
+    // ─── LIVE DEBOUNCE ────────────────────────────────────────────────
+    function liveEstimate() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(runEstimate, 600);
+    }
+
+    // ─── MAIN ESTIMATE CALL ──────────────────────────────────────────
+    async function runEstimate() {
+      const btn = document.getElementById('btnEstimate');
+      btn.classList.add('loading');
+
+      try {
+        const config = buildConfig();
+        if (currentJobType === 'amc_outdoor') {
+          // remove undefined key
+          if (!config.subcontractor_annual) delete config.subcontractor_annual;
+        }
+
+        const response = await fetch(API_BASE + '/estimate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ job_type: currentJobType, config }),
+          signal: AbortSignal.timeout(10000),
+        });
+        const data = await response.json();
+        if (!data.ok) throw new Error(data.error || 'Unknown error');
+
+        renderResults(data.result);
+        lastResult = data.result;
+        lastConfig = config;
+        const expBtn = document.getElementById('btnExport');
+        if (expBtn) {
+          expBtn.disabled = false;
+          expBtn.title = 'Export this estimate to formatted multi-sheet Excel';
+        }
+        setStatus('Engine online', true);
+      } catch (err) {
+        showToast('❌ ' + err.message, 'error');
+        setStatus('Engine offline — start quote_api.py', false);
+      } finally {
+        btn.classList.remove('loading');
+      }
+    }
+
+    // ─── RENDER RESULTS ──────────────────────────────────────────────
+    function clearResults() {
+      const panel = document.getElementById('resultsPanel');
+      panel.innerHTML = `
+    <div class="card" id="emptyState">
+      <div class="empty-state">
+        <div class="big-icon">📊</div>
+        <p>Fill in the site details on the left and click <strong>Generate Estimate</strong> to see your real-time cost breakdown.</p>
+      </div>
+    </div>`;
+      // reset export state
+      lastResult = null;
+      lastConfig = null;
+      const expBtn = document.getElementById('btnExport');
+      if (expBtn) expBtn.disabled = true;
+    }
+
+    function fmt(n) {
+      if (typeof n !== 'number') return n;
+      return 'AED ' + n.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+    function fmtN(n) {
+      if (typeof n !== 'number') return n;
+      return n.toLocaleString('en-AE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
+
+    function renderResults(r) {
+      const site = document.getElementById('siteName').value || 'Site';
+      const client = document.getElementById('clientName').value || 'Client';
+      const panel = document.getElementById('resultsPanel');
+      panel.innerHTML = '';
+
+      if (currentJobType === 'amc_outdoor') renderAmcOutdoor(r, panel, site, client);
+      else if (currentJobType === 'amc_indoor') renderAmcIndoor(r, panel, site, client);
+      else if (currentJobType === 'project_outdoor') renderProjectOutdoor(r, panel, site, client);
+      else if (currentJobType === 'project_indoor') renderProjectIndoor(r, panel, site, client);
+    }
+
+    // ── AMC OUTDOOR ───────────────────────────────────────────────────
+    function renderAmcOutdoor(r, panel, site, client) {
+      panel.innerHTML = `
+  <!-- Key metrics -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🏡</div>
+      <div>
+        <div class="card-title">${site}</div>
+        <div class="card-sub">AMC Outdoor · ${client}</div>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card highlight">
+        <div class="metric-label">Monthly Rate (Year 1)</div>
+        <div class="metric-value large">${fmtN(r.monthly_rate_y1)}</div>
+        <div class="metric-sub">AED — incl. all markups</div>
+      </div>
+      <div class="metric-card highlight">
+        <div class="metric-label">Monthly incl. VAT 5%</div>
+        <div class="metric-value large">${fmtN(r.monthly_incl_vat)}</div>
+        <div class="metric-sub">AED — invoiced to client</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Site Equiv. Area</div>
+        <div class="metric-value">${r.equiv_area_m2.toLocaleString()} m²</div>
+        <div class="metric-sub">FTE Required: ${r.fte_required}</div>
+      </div>
+      <div class="metric-card amber">
+        <div class="metric-label">3-Year Contract Value</div>
+        <div class="metric-value">${fmtN(r.net_3yr_contract)}</div>
+        <div class="metric-sub">AED — total portfolio</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Year breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">📅</div>
+      <div><div class="card-title">Multi-Year Grand Totals</div></div>
+    </div>
+    <div class="year-strip">
+      <div class="year-card">
+        <div class="year-label">Year 1</div>
+        <div class="year-value" style="color:var(--accent-g1)">${fmtN(r.grand_total_y1)}</div>
+        <div class="metric-sub" style="text-align:center;margin-top:4px">AED</div>
+      </div>
+      <div class="year-card">
+        <div class="year-label">Year 2</div>
+        <div class="year-value" style="color:var(--accent-g2)">${fmtN(r.grand_total_y2)}</div>
+        <div class="metric-sub" style="text-align:center;margin-top:4px">AED</div>
+      </div>
+      <div class="year-card">
+        <div class="year-label">Year 3 (+5% Labour)</div>
+        <div class="year-value" style="color:var(--accent-amber)">${fmtN(r.grand_total_y3)}</div>
+        <div class="metric-sub" style="text-align:center;margin-top:4px">AED</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Cost breakdown -->
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🧮</div>
+      <div><div class="card-title">Year 1 Cost Breakdown</div></div>
+    </div>
+    <table class="breakdown-table">
+      <tr><td><span class="row-label">Labour Direct</span></td><td>${fmt(r.labour_direct_y1)}</td></tr>
+      <tr><td><span class="row-label">Labour Indirect</span></td><td>${fmt(r.labour_indirect_y1)}</td></tr>
+      <tr><td><span class="row-label">Equipment</span></td><td>${fmt(r.equipment_y1)}</td></tr>
+      <tr><td><span class="row-label">PPE / Uniform</span></td><td>${fmt(r.ppe_y1)}</td></tr>
+      <tr><td><span class="row-label">Consumables</span></td><td>${fmt(r.consumables_y1)}</td></tr>
+      <tr><td><span class="row-label">Subcontractor</span></td><td>${fmt(r.subcontractor_y1)}</td></tr>
+      <tr><td><span class="row-label">Admin</span></td><td>${fmt(r.admin_y1)}</td></tr>
+      <tr><td><span class="row-label">Insurance / Other</span></td><td>${fmt(r.other_y1)}</td></tr>
+      <tr style="border-top:2px solid var(--border)"><td><strong>Sub-Total (Y1)</strong></td><td><strong>${fmt(r.subtotal_y1)}</strong></td></tr>
+      <tr><td><span class="row-label">Margin (10%)</span></td><td>${fmt(r.margin_val)}</td></tr>
+      <tr><td><span class="row-label">Overhead (10%)</span></td><td>${fmt(r.overhead_val)}</td></tr>
+      <tr><td><span class="row-label">Negotiation Buffer (5%)</span></td><td>${fmt(r.nego_val)}</td></tr>
+      <tr class="total-row"><td>Grand Total Year 1</td><td>${fmt(r.grand_total_y1)}</td></tr>
+    </table>
+  </div>`;
+    }
+
+    // ── AMC INDOOR ────────────────────────────────────────────────────
+    function renderAmcIndoor(r, panel, site, client) {
+      let linesHtml = r.line_details.map(l => `
+    <tr>
+      <td>${l.description}</td>
+      <td style="text-align:center">${l.qty}</td>
+      <td style="text-align:right">${fmtN(l.unit_rate)}</td>
+      <td>${fmt(l.monthly_charge)}</td>
+      <td>${fmt(l.annual_charge)}</td>
+    </tr>`).join('');
+
+      panel.innerHTML = `
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🪴</div>
+      <div>
+        <div class="card-title">${site}</div>
+        <div class="card-sub">AMC Indoor · ${client}</div>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card highlight">
+        <div class="metric-label">Net Monthly (incl. VAT)</div>
+        <div class="metric-value large">${fmtN(r.gross_monthly_incl_vat)}</div>
+        <div class="metric-sub">AED — invoiced to client</div>
+      </div>
+      <div class="metric-card highlight">
+        <div class="metric-label">Net Annual Value</div>
+        <div class="metric-value large">${fmtN(r.net_annual)}</div>
+        <div class="metric-sub">AED — contract value</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Base Monthly</div>
+        <div class="metric-value">${fmtN(r.base_monthly)}</div>
+        <div class="metric-sub">Before discount</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">VAT (5% monthly)</div>
+        <div class="metric-value">${fmtN(r.vat_monthly)}</div>
+        <div class="metric-sub">Discount: AED ${fmtN(r.discount_monthly)}/month</div>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">📋</div>
+      <div><div class="card-title">Plant Schedule</div></div>
+    </div>
+    <table class="manifest-table">
+      <thead><tr><th>Description</th><th>Qty</th><th style="text-align:right">Rate</th><th>Monthly</th><th>Annual</th></tr></thead>
+      <tbody>${linesHtml}</tbody>
+    </table>
+  </div>`;
+    }
+
+    // ── PROJECT OUTDOOR ───────────────────────────────────────────────
+    function renderProjectOutdoor(r, panel, site, client) {
+      let rows = r.manifest.map(m => `
+    <tr>
+      <td>${m.description}</td>
+      <td style="text-align:center">${m.qty} ${m.unit}</td>
+      <td style="text-align:right">${fmtN(m.cost)}</td>
+      <td style="text-align:right">${fmtN(m.labor)}</td>
+      <td style="text-align:right">${fmtN(m.suprv)}</td>
+      <td style="text-align:right">${fmtN(m.plant)}</td>
+      <td style="text-align:right">${fmtN(m.oh)}</td>
+      <td>${fmtN(m.unit_rate)}</td>
+      <td>${fmt(m.extended)}</td>
+    </tr>`).join('');
+
+      panel.innerHTML = `
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🌳</div>
+      <div>
+        <div class="card-title">${site}</div>
+        <div class="card-sub">Project Outdoor · ${client}</div>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card highlight">
+        <div class="metric-label">Final Quote (incl. VAT)</div>
+        <div class="metric-value large">${fmtN(r.final_quote)}</div>
+        <div class="metric-sub">AED — to client</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Gross Total</div>
+        <div class="metric-value">${fmtN(r.gross_total)}</div>
+        <div class="metric-sub">Before discount</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Discount</div>
+        <div class="metric-value">${fmtN(r.discount)}</div>
+        <div class="metric-sub">Negotiation</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">VAT (5%)</div>
+        <div class="metric-value">${fmtN(r.vat)}</div>
+        <div class="metric-sub">UAE VAT</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <div class="card-header">
+      <div class="card-icon">📋</div>
+      <div><div class="card-title">Itemised BOQ</div></div>
+    </div>
+    <table class="manifest-table" style="min-width:700px">
+      <thead><tr>
+        <th>Description</th><th>Qty</th><th>Cost</th><th>Labor</th><th>Suprv</th><th>Plant</th><th>OH</th><th>Unit Rate</th><th>Extended</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="height:14px"></div>
+    <div class="summary-pills">
+      <span class="pill">Gross: AED ${fmtN(r.gross_total)}</span>
+      <span class="pill">Taxable: AED ${fmtN(r.taxable_base)}</span>
+      <span class="pill green">VAT: AED ${fmtN(r.vat)}</span>
+      <span class="pill blue">Total: AED ${fmtN(r.final_quote)}</span>
+    </div>
+  </div>`;
+    }
+
+    // ── PROJECT INDOOR ────────────────────────────────────────────────
+    function renderProjectIndoor(r, panel, site, client) {
+      let rows = r.manifest.map(m => `
+    <tr>
+      <td>${m.description}</td>
+      <td style="text-align:center">${m.qty}</td>
+      <td>${fmtN(m.pot)}</td>
+      <td>${fmtN(m.main_plant)}</td>
+      <td>${fmtN(m.under_plants)}</td>
+      <td>${fmtN(m.soil_hydrostone)}</td>
+      <td>${fmtN(m.oh_pot + m.oh_plant)}</td>
+      <td>${fmtN(m.profit + m.nego)}</td>
+      <td>${fmtN(m.unit_rate)}</td>
+      <td>${fmt(m.extended)}</td>
+    </tr>`).join('');
+
+      panel.innerHTML = `
+  <div class="card">
+    <div class="card-header">
+      <div class="card-icon">🎍</div>
+      <div>
+        <div class="card-title">${site}</div>
+        <div class="card-sub">Project Indoor · ${client}</div>
+      </div>
+    </div>
+    <div class="metric-grid">
+      <div class="metric-card highlight">
+        <div class="metric-label">Final Quote (incl. VAT)</div>
+        <div class="metric-value large">${fmtN(r.final_quote)}</div>
+        <div class="metric-sub">AED — to client</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Gross Total</div>
+        <div class="metric-value">${fmtN(r.gross_total)}</div>
+        <div class="metric-sub">Before discount</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">Discount Applied</div>
+        <div class="metric-value">${fmtN(r.discount)}</div>
+        <div class="metric-sub">Commercial concession</div>
+      </div>
+      <div class="metric-card">
+        <div class="metric-label">VAT (5%)</div>
+        <div class="metric-value">${fmtN(r.vat)}</div>
+        <div class="metric-sub">UAE VAT</div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="overflow-x:auto">
+    <div class="card-header">
+      <div class="card-icon">📋</div>
+      <div>
+        <div class="card-title">Cost Estimation Model</div>
+        <div class="card-sub">OH: Pot 20% · Plant 20% | Profit 20% | Nego 10%</div>
+      </div>
+    </div>
+    <table class="manifest-table" style="min-width:750px">
+      <thead><tr>
+        <th>Description</th><th>Qty</th><th>Pot</th><th>Main Plant</th><th>Under Plants</th><th>Soil+Hydro</th><th>OH Total</th><th>Profit+Nego</th><th>Unit Rate</th><th>Extended</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <div style="height:14px"></div>
+    <div class="summary-pills">
+      <span class="pill">Gross: AED ${fmtN(r.gross_total)}</span>
+      <span class="pill">Taxable: AED ${fmtN(r.taxable_base)}</span>
+      <span class="pill green">VAT: AED ${fmtN(r.vat)}</span>
+      <span class="pill blue">Total: AED ${fmtN(r.final_quote)}</span>
+    </div>
+  </div>`;
+    }
+
+    // ─── TOAST ────────────────────────────────────────────────────────
+    function showToast(msg, type = 'success') {
+      const t = document.getElementById('toast');
+      t.textContent = msg;
+      t.className = 'toast ' + type + ' show';
+      setTimeout(() => t.classList.remove('show'), 4000);
+    }
+
+    // ─── EXPORT TO EXCEL ──────────────────────────────────────────────
+    let lastResult = null;   // store most recent estimate result
+    let lastConfig = null;   // store most recent config
+
+    async function exportExcel() {
+      if (!lastResult || !lastConfig) {
+        showToast('⚠️ Run an estimate first before exporting.', 'error');
+        return;
+      }
+      const btn = document.getElementById('btnExport');
+      btn.classList.add('loading');
+
+      try {
+        const meta = {
+          site: document.getElementById('siteName').value || 'Site',
+          client: document.getElementById('clientName').value || 'Client',
+        };
+
+        const response = await fetch(API_BASE + '/export/excel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            job_type: currentJobType,
+            config: lastConfig,
+            meta: meta,
+          }),
+          signal: AbortSignal.timeout(30000),
+        });
+
+        if (!response.ok) {
+          const err = await response.json().catch(() => ({ error: 'Unknown export error' }));
+          throw new Error(err.error || 'Export failed');
+        }
+
+        // Pull filename from Content-Disposition header
+        const cd = response.headers.get('Content-Disposition') || '';
+        const match = cd.match(/filename[^;=\n]*=(['"]?)([^\n;'"]*?)\1(;|$)/);
+        const fname = match ? match[2] : 'Quote_Estimate.xlsx';
+
+        // Stream bytes → blob → download
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        anchor.download = decodeURIComponent(fname);
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+
+        showToast('✅ Excel file downloaded: ' + fname, 'success');
+      } catch (err) {
+        showToast('❌ Export failed: ' + err.message, 'error');
+      } finally {
+        btn.classList.remove('loading');
+      }
+    }
+  </script>
+</body>
+
+</html>
