@@ -117,6 +117,8 @@ STANDARD UNIT RATES (from real data):
     Nego buffer:                 10% on combined
 """
 
+import math
+
 # ============================================================
 # CONSTANTS — extracted directly from Excel sheet analysis
 # ============================================================
@@ -205,16 +207,28 @@ class AmcOutdoorPricer:
         eq_area = self._equiv_area()
         fte = self._fte(eq_area)
 
+        # Parse total_space override
+        total_space = c.get("total_space")
+        if total_space is not None and total_space != "":
+            try:
+                total_space = float(total_space)
+            except ValueError:
+                total_space = None
+        else:
+            total_space = None
+
+        cost_area = total_space if total_space is not None else eq_area
+
         flowers = c.get("seasonal_flowers", 0)
         flower_cost_annual = (flowers / 100) * FLOWER_RATE_PER_100 * FLOWER_ROTATIONS
 
         # --- Year 1 cost components ---
         labour_direct_y1   = fte * FTE_DIRECT_MONTHLY * 12
         labour_indirect_y1 = fte * FTE_INDIRECT_MONTHLY * 12
-        equipment_y1       = eq_area * EQUIPMENT_PER_M2
+        equipment_y1       = cost_area * EQUIPMENT_PER_M2
         ppe_y1             = max(fte * PPE_PER_FTE, PPE_MINIMUM)
-        consumables_y1     = (eq_area * CONSUMABLES_PER_M2) + flower_cost_annual
-        subcontractor_y1   = c.get("subcontractor_annual", eq_area * SUBCONTRACTOR_PER_M2)
+        consumables_y1     = (cost_area * CONSUMABLES_PER_M2) + flower_cost_annual
+        subcontractor_y1   = c.get("subcontractor_annual", cost_area * SUBCONTRACTOR_PER_M2)
         admin_y1           = c.get("admin_annual", 0.0)
         other_y1           = c.get("insurance_annual", INSURANCE_BASE)
 
@@ -250,6 +264,7 @@ class AmcOutdoorPricer:
         return {
             # Site metrics
             "equiv_area_m2":       round(eq_area, 2),
+            "total_space":         round(total_space, 2) if total_space is not None else None,
             "fte_required":        round(fte, 4),
             # Year 1 breakdown
             "labour_direct_y1":    round(labour_direct_y1, 2),
@@ -341,7 +356,7 @@ class ProjectOutdoorPricer:
     """
     Project / Variation Order pricing for OUTDOOR works (PTO / VOO).
     Inputs: list of line items [{description, qty, unit, cost, labor, suprv, plant}]
-    Output: itemised quote with OH 10%, totals, VAT
+    Output: itemised quote with exact columns, markups, totals, VAT
     """
 
     def __init__(self, config: dict):
@@ -350,7 +365,14 @@ class ProjectOutdoorPricer:
     def compute(self) -> dict:
         c = self.cfg
         items = c.get("items", [])
-        oh_pct = c.get("oh_pct", PTO_OH_PCT)
+        
+        # Get percentages from config or reference standards
+        oh_material_pct = c.get("oh_material_pct", 0.20)
+        oh_labor_pct = c.get("oh_labor_pct", 0.20)
+        profit_material_pct = c.get("profit_material_pct", 0.20)
+        profit_labor_pct = c.get("profit_labor_pct", 0.20)
+        nego_pct = c.get("nego_pct", 0.10)
+        suprv_pct = c.get("suprv_pct", 0.25)
 
         manifest = []
         gross_total = 0.0
@@ -359,12 +381,25 @@ class ProjectOutdoorPricer:
             qty    = item.get("qty", 1)
             cost   = item.get("cost", 0.0)
             labor  = item.get("labor", 0.0)
-            suprv  = item.get("suprv", 0.0)
+            
+            # supervision defaults to labor * suprv_pct if not provided
+            suprv  = item.get("suprv", None)
+            if suprv is None:
+                suprv = labor * suprv_pct
+            
             plant  = item.get("plant", 0.0)
 
-            material = cost + plant                    # OH applied on material+plant
-            oh       = material * oh_pct
-            unit_rate = round(cost + labor + suprv + plant + oh)
+            material = cost + plant
+            labor_total = labor + suprv
+            
+            oh_material = material * oh_material_pct
+            oh_labor = labor_total * oh_labor_pct
+            profit_material = material * profit_material_pct
+            profit_labor = labor_total * profit_labor_pct
+            nego = (cost + labor + suprv + plant) * nego_pct
+
+            unit_cost = cost + labor + suprv + plant + oh_material + oh_labor + profit_material + profit_labor + nego
+            unit_rate = math.ceil(unit_cost)
             extended  = unit_rate * qty
             gross_total += extended
 
@@ -376,7 +411,12 @@ class ProjectOutdoorPricer:
                 "labor":       labor,
                 "suprv":       suprv,
                 "plant":       plant,
-                "oh":          round(oh, 2),
+                "oh_material": round(oh_material, 2),
+                "oh_labor":    round(oh_labor, 2),
+                "profit_material": round(profit_material, 2),
+                "profit_labor":    round(profit_labor, 2),
+                "nego":        round(nego, 2),
+                "unit_cost":   round(unit_cost, 2),
                 "unit_rate":   unit_rate,
                 "extended":    extended,
             })
@@ -393,6 +433,12 @@ class ProjectOutdoorPricer:
             "taxable_base":  round(taxable, 2),
             "vat":           round(vat, 2),
             "final_quote":   round(final_quote, 2),
+            "oh_material_pct": oh_material_pct,
+            "oh_labor_pct": oh_labor_pct,
+            "profit_material_pct": profit_material_pct,
+            "profit_labor_pct": profit_labor_pct,
+            "nego_pct": nego_pct,
+            "suprv_pct": suprv_pct,
         }
 
 
@@ -437,8 +483,8 @@ class ProjectIndoorPricer:
             nego      = combined  * nego_pct
 
             unit_cost = combined + oh_pot + oh_plant + profit + nego + labor + delivery
-            unit_rate = round(unit_cost)       # Integer rounding per sheet convention
-            extended  = unit_rate * qty
+            unit_rate = round(unit_cost, 2)       # Keep decimals per sheet convention
+            extended  = round(unit_rate * qty, 2)
             gross_total += extended
 
             manifest.append({
@@ -471,6 +517,10 @@ class ProjectIndoorPricer:
             "taxable_base":  round(taxable, 2),
             "vat":           round(vat, 2),
             "final_quote":   round(final_quote, 2),
+            "oh_pot_pct":    oh_pot_pct,
+            "oh_plant_pct":  oh_plant_pct,
+            "profit_pct":    profit_pct,
+            "nego_pct":      nego_pct,
         }
 
 

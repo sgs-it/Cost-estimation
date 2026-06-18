@@ -17,6 +17,7 @@ import openpyxl
 from openpyxl.styles import (Font, PatternFill, Alignment, Border, Side,
                               GradientFill)
 from openpyxl.utils import get_column_letter
+from price_logic import MARGIN_PCT, OVERHEAD_PCT, NEGO_PCT
 
 # ─── SHARED STYLE HELPERS ────────────────────────────────────────────────────
 
@@ -156,46 +157,27 @@ def _build_summary_sheet(wb, result, meta):
     ws.row_dimensions[R].height = 22
 
     # Data rows
-    r = result
     NF = '#,##0.00'
     PCT = '0.00%'
     rows_data = [
-        ("MOBILISATION",           "", 0,
-         "", "", "", 0, "0%"),
-        ("LABOUR DIRECT",          "",  "",
-         r["labour_direct_y1"], r["labour_direct_y1"],
-         r["labour_direct_y1"]*1.05,
-         r["labour_direct_y1"]*2 + r["labour_direct_y1"]*1.05,
-         r["labour_direct_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
-        ("LABOUR INDIRECT",        "", "",
-         r["labour_indirect_y1"], r["labour_indirect_y1"],
-         r["labour_indirect_y1"]*1.05,
-         r["labour_indirect_y1"]*2 + r["labour_indirect_y1"]*1.05,
-         r["labour_indirect_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
-        ("CAPITAL EQUIPMENT",      "", "",
-         r["equipment_y1"], r["equipment_y1"], r["equipment_y1"],
-         r["equipment_y1"]*3,
-         r["equipment_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
-        ("UNIFORM / PPE",          "", "",
-         r["ppe_y1"], r["ppe_y1"], r["ppe_y1"]*1.05,
-         r["ppe_y1"]*2 + r["ppe_y1"]*1.05,
-         r["ppe_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
-        ("CONSUMABLES",            "", "",
-         r["consumables_y1"], r["consumables_y1"], r["consumables_y1"],
-         r["consumables_y1"]*3,
-         r["consumables_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
-        ("SUBCONTRACTOR",          "", "",
-         r["subcontractor_y1"], r["subcontractor_y1"], r["subcontractor_y1"]*1.05,
-         r["subcontractor_y1"]*2 + r["subcontractor_y1"]*1.05,
-         r["subcontractor_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
-        ("ADMIN (DIRECT COST)",    "", "",
-         r["admin_y1"], r["admin_y1"], r["admin_y1"],
-         r["admin_y1"]*3,
-         0),
-        ("OTHER (INSURANCE)",      "", "",
-         r["other_y1"], r["other_y1"], r["other_y1"]*1.05,
-         r["other_y1"]*2 + r["other_y1"]*1.05,
-         r["other_y1"] / r["subtotal_y1"] if r["subtotal_y1"] else 0),
+        ("MOBILISATION",           "", "=0",
+         "=0", "=0", "=0", "=SUM(C8:F8)", "=C8/D$17"),
+        ("LABOUR DIRECT",          "", "=0",
+         "=Labour!I19", "=D9", "=E9*1.05", "=SUM(C9:F9)", "=D9/D$17"),
+        ("LABOUR INDIRECT",        "", "=0",
+         "=Labour!I20", "=D10", "=E10*1.05", "=SUM(C10:F10)", "=D10/D$17"),
+        ("CAPITAL EQUIPMENT",      "", "=0",
+         "=Equipment!G13", "=D11", "=E11", "=SUM(C11:F11)", "=D11/D$17"),
+        ("UNIFORM / PPE",          "", "=0",
+         "=PPE!F14", "=D12", "=E12*1.05", "=SUM(C12:F12)", "=D12/D$17"),
+        ("CONSUMABLES",            "", "=0",
+         "=Consumables!H18", "=D13", "=E13", "=SUM(C13:F13)", "=D13/D$17"),
+        ("SUBCONTRACTOR",          "", "=0",
+         "=Subcontractor!G8", "=D14", "=E14*1.05", "=SUM(C14:F14)", "=D14/D$17"),
+        ("ADMIN (DIRECT COST)",    "", "=0",
+         "=0", "=0", "=0", "=SUM(C15:F15)", "=D15/D$17"),
+        ("OTHER (INSURANCE)",      "", "=0",
+         "=Other!H6", "=D16", "=E16*1.05", "=SUM(C16:F16)", "=D16/D$17"),
     ]
 
     num_cols = {3: NF, 4: NF, 5: NF, 6: NF, 7: NF, 8: PCT}
@@ -207,20 +189,24 @@ def _build_summary_sheet(wb, result, meta):
 
     # Subtotal
     ST = R + 1 + len(rows_data)
-    _data_row(ws, ST, ["", "", r["subtotal_y1"]*0,
-                        r["subtotal_y1"], r["subtotal_y2"],
-                        r["subtotal_y3"],
-                        r["subtotal_y1"]+r["subtotal_y2"]+r["subtotal_y3"],
+    _data_row(ws, ST, ["", "", "=SUM(C8:C16)",
+                        "=SUM(D8:D16)", "=SUM(E8:E16)",
+                        "=SUM(F8:F16)",
+                        "=SUM(G8:G16)",
                         ""],
               bg=LIGHT, bold=True,
               align_map={3:"right",4:"right",5:"right",6:"right",7:"right"},
               number_cols={3:NF,4:NF,5:NF,6:NF,7:NF}, height=19)
 
     # Markup block
+    margin_pct = result.get("margin_pct", MARGIN_PCT)
+    overhead_pct = result.get("overhead_pct", OVERHEAD_PCT)
+    nego_pct = result.get("nego_pct", NEGO_PCT)
+
     markup_rows = [
-        ("Margin",      0.10, 0, r["margin_val"],   r["margin_val"],   r["margin_val"],   r["margin_val"]*3,   ""),
-        ("Overhead",    0.10, 0, r["overhead_val"],  r["overhead_val"], r["overhead_val"], r["overhead_val"]*3, ""),
-        ("Negotiation", 0.05, 0, r["nego_val"],      r["nego_val"],     r["nego_val"],     r["nego_val"]*3,     ""),
+        ("Margin",      margin_pct, "=0", "=D$17*B18",   "=E$17*B18",   "=F$17*B18",   "=SUM(D18:F18)",   ""),
+        ("Overhead",    overhead_pct, "=0", "=D$17*B19",  "=E$17*B19",   "=F$17*B19",   "=SUM(D19:F19)",   ""),
+        ("Negotiation", nego_pct, "=0", "=(D$17-D$16)*B20", "=(E$17-E$16)*B20", "=(F$17-F$16)*B20", "=SUM(D20:F20)", ""),
     ]
     for i, row_d in enumerate(markup_rows):
         rr = ST + 1 + i
@@ -229,19 +215,19 @@ def _build_summary_sheet(wb, result, meta):
                   number_cols={2:PCT,3:NF,4:NF,5:NF,6:NF,7:NF}, height=17)
 
     MR = ST + 4  # markup subtotal row
-    _data_row(ws, MR, ["", 0.25, 0,
-                        r["total_markup"], r["total_markup"], r["total_markup"],
-                        r["total_markup"]*3, ""],
+    _data_row(ws, MR, ["", "=SUM(B18:B20)", "=0",
+                        "=SUM(D18:D20)", "=SUM(E18:E20)", "=SUM(F18:F20)",
+                        "=SUM(G18:G20)", ""],
               bg=LIGHT, bold=True,
               align_map={2:"right",3:"right",4:"right",5:"right",6:"right",7:"right"},
               number_cols={2:PCT,3:NF,4:NF,5:NF,6:NF,7:NF}, height=19)
 
     # Grand totals
     GR = MR + 2
-    _data_row(ws, GR, ["", "", 0,
-                        r["grand_total_y1"], r["grand_total_y2"],
-                        r["grand_total_y3"],
-                        r["net_3yr_contract"], ""],
+    _data_row(ws, GR, ["", "", "=0",
+                        "=D$17+D$21", "=E$17+E$21",
+                        "=F$17+F$21",
+                        "=SUM(D23:F23)", ""],
               bg=NAVY, bold=True,
               align_map={3:"right",4:"right",5:"right",6:"right",7:"right"},
               number_cols={3:NF,4:NF,5:NF,6:NF,7:NF}, height=22)
@@ -252,8 +238,8 @@ def _build_summary_sheet(wb, result, meta):
     # Monthly row
     MN = GR + 1
     _data_row(ws, MN, ["MONTHLY RATE (incl. VAT 5%)", "", "",
-                        r["monthly_incl_vat"], r["monthly_incl_vat"],
-                        round(r["grand_total_y3"]/12 * 1.05, 2), "", ""],
+                        "=(D23/12)*1.05", "=(E23/12)*1.05",
+                        "=(F23/12)*1.05", "", ""],
               bg=TEAL, bold=True,
               align_map={4:"right",5:"right",6:"right"},
               number_cols={4:NF,5:NF,6:NF}, height=20)
@@ -767,7 +753,7 @@ def _build_ce_project_outdoor(wb, result, meta):
     ws = wb.create_sheet("CE - SK")
     ws.sheet_view.showGridLines = False
 
-    ws.merge_cells("A1:I1")
+    ws.merge_cells("A1:P1")
     c = ws.cell(row=1, column=1,
                 value="Italian Planters LLC  ( Integrated Landscaping Solutions )")
     c.font = Font(name="Calibri", size=13, bold=True, color=WHITE)
@@ -775,7 +761,7 @@ def _build_ce_project_outdoor(wb, result, meta):
     c.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 26
 
-    ws.merge_cells("A2:I2")
+    ws.merge_cells("A2:P2")
     c = ws.cell(row=2, column=1, value="COST ESTIMATION MODEL")
     c.font = Font(name="Calibri", size=11, bold=True, color=WHITE)
     c.fill = _fill(TEAL)
@@ -785,52 +771,83 @@ def _build_ce_project_outdoor(wb, result, meta):
     ws.cell(row=3, column=1, value=f"CE - {meta['client']} - {meta['site']}").font = Font(name="Calibri",size=10,bold=True,color=DARK)
     ws.cell(row=4, column=1, value=f"As on {datetime.date.today().strftime('%B %d, %Y')}").font = Font(name="Calibri",size=10,color=DARK)
 
-    _header_row(ws, 5, ["S/N", "DESCRIPTION OF WORKS",
-                         "QTY", "UNIT", "COST (AED)", "LABOR (AED)",
-                         "SUPRV (AED)", "PLANT (AED)",
-                         "OH 10% (AED)", "UNIT RATE", "AMOUNT (AED)"],
-                height=28)
+    # Read markup percentages
+    oh_material_pct = result.get("oh_material_pct", 0.20)
+    oh_labor_pct = result.get("oh_labor_pct", 0.20)
+    profit_material_pct = result.get("profit_material_pct", 0.20)
+    profit_labor_pct = result.get("profit_labor_pct", 0.20)
+    nego_pct = result.get("nego_pct", 0.10)
+
+    oh_mat_label = f"OH ({oh_material_pct*100:.0f}%)\n(Material+Plant)"
+    oh_lab_label = f"OH ({oh_labor_pct*100:.0f}%)\n(Labour)"
+    prof_mat_label = f"PROFIT ({profit_material_pct*100:.0f}%)\n(Material+Plant)"
+    prof_lab_label = f"PROFIT ({profit_labor_pct*100:.0f}%)\n(Labour)"
+    nego_label = f"NEGO.    ({nego_pct*100:.0f}%)"
+
+    _header_row(ws, 5, [
+        "S/N", "DESCRIPTION OF WORKS", "QTY.", "UNIT",
+        "COST", "LABOR", "SUPRV.", "PLANT",
+        oh_mat_label, oh_lab_label, prof_mat_label, prof_lab_label,
+        nego_label, "TOTAL", "RATE", "AMOUNT"
+    ], height=32)
 
     NF = '#,##0.00'
     row = 6
     for i, item in enumerate(result["manifest"], 1):
-        _data_row(ws, row,
-                  [i, item["description"], item["qty"], item["unit"],
-                   item["cost"], item["labor"], item["suprv"],
-                   item["plant"], item["oh"], item["unit_rate"], item["extended"]],
-                  align_map={3:"right",5:"right",6:"right",7:"right",
-                              8:"right",9:"right",10:"right",11:"right"},
-                  number_cols={5:NF,6:NF,7:NF,8:NF,9:NF,10:NF,11:NF}, height=18)
+        cols_values = [
+            i,
+            item["description"],
+            item["qty"],
+            item["unit"],
+            item["cost"],
+            item["labor"],
+            item["suprv"],
+            item["plant"],
+            f"=(E{row}+H{row})*{oh_material_pct}",
+            f"=(F{row}+G{row})*{oh_labor_pct}",
+            f"=(E{row}+H{row})*{profit_material_pct}",
+            f"=(F{row}+G{row})*{profit_labor_pct}",
+            f"=(E{row}+F{row}+G{row}+H{row})*{nego_pct}",
+            f"=SUM(E{row}:M{row})",
+            f"=CEILING(N{row},1)",
+            f"=C{row}*O{row}"
+        ]
+        _data_row(ws, row, cols_values,
+                  align_map={3:"right", 4:"center", 5:"right", 6:"right", 7:"right", 8:"right",
+                             9:"right", 10:"right", 11:"right", 12:"right", 13:"right",
+                             14:"right", 15:"right", 16:"right"},
+                  number_cols={5:NF, 6:NF, 7:NF, 8:NF, 9:NF, 10:NF, 11:NF, 12:NF, 13:NF, 14:NF, 15:NF, 16:NF},
+                  height=18)
         row += 1
 
     # Total block
-    _data_row(ws, row, ["", "Total Amount", "", "", "", "", "", "", "", "",
-                         result["gross_total"]],
-              bg=NAVY, bold=True, align_map={11:"right"}, number_cols={11:NF}, height=20)
-    for col in range(1,12):
-        ws.cell(row=row, column=col).font = Font(name="Calibri", size=11, bold=True, color=WHITE)
-    row += 1
-    _data_row(ws, row, ["", "Discount / Negotiation", "", "", "", "", "", "", "", "",
-                         result["discount"]],
-              align_map={11:"right"}, number_cols={11:NF}, height=17)
-    row += 1
-    _data_row(ws, row, ["", "Taxable Base", "", "", "", "", "", "", "", "",
-                         result["taxable_base"]],
-              bg=LIGHT, bold=True, align_map={11:"right"}, number_cols={11:NF}, height=18)
-    row += 1
-    _data_row(ws, row, ["", "VAT 5%", "", "", "", "", "", "", "", "",
-                         result["vat"]],
-              align_map={11:"right"}, number_cols={11:NF}, height=17)
-    row += 1
-    _data_row(ws, row, ["", "FINAL QUOTED AMOUNT", "", "", "", "", "", "", "", "",
-                         result["final_quote"]],
-              bg=TEAL, bold=True, align_map={11:"right"}, number_cols={11:NF}, height=22)
-    for col in range(1,12):
-        ws.cell(row=row, column=col).font = Font(name="Calibri", size=13, bold=True, color=WHITE)
-    row += 2
+    total_row = row
+    _data_row(ws, total_row, ["", "Total Amount", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=SUM(P6:P{total_row-1})"],
+              bg=NAVY, bold=True, align_map={16:"right"}, number_cols={16:NF}, height=20)
+    for col in range(1, 17):
+        ws.cell(row=total_row, column=col).font = Font(name="Calibri", size=11, bold=True, color=WHITE)
+
+    disc_row = total_row + 1
+    _data_row(ws, disc_row, ["", "Discount / Negotiation", "", "", "", "", "", "", "", "", "", "", "", "", "", result["discount"]],
+              align_map={16:"right"}, number_cols={16:NF}, height=17)
+
+    tax_row = total_row + 2
+    _data_row(ws, tax_row, ["", "Taxable Base", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=P{total_row}-P{disc_row}"],
+              bg=LIGHT, bold=True, align_map={16:"right"}, number_cols={16:NF}, height=18)
+
+    vat_row = total_row + 3
+    _data_row(ws, vat_row, ["", "VAT 5%", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=P{tax_row}*0.05"],
+              align_map={16:"right"}, number_cols={16:NF}, height=17)
+
+    final_row = total_row + 4
+    _data_row(ws, final_row, ["", "FINAL QUOTED AMOUNT", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=P{tax_row}+P{vat_row}"],
+              bg=TEAL, bold=True, align_map={16:"right"}, number_cols={16:NF}, height=22)
+    for col in range(1, 17):
+        ws.cell(row=final_row, column=col).font = Font(name="Calibri", size=13, bold=True, color=WHITE)
+    row = final_row + 2
 
     # T&C section
-    _section_title(ws, row, "TERMS & CONDITIONS", ncols=11, bg="FFF2CC")
+    _section_title(ws, row, "TERMS & CONDITIONS", ncols=16, bg="FFF2CC")
     row += 1
     tc_list = [
         "Any other works which is not mentioned in the scope above are excluded.",
@@ -840,14 +857,14 @@ def _build_ce_project_outdoor(wb, result, meta):
         "Standard UAE VAT at 5% is applicable on all services.",
     ]
     for tc in tc_list:
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=11)
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=16)
         c = ws.cell(row=row, column=1, value=f"• {tc}")
         c.font = Font(name="Calibri", size=9, italic=True, color="444444")
         c.alignment = Alignment(horizontal="left", vertical="center", wrap_text=True)
         ws.row_dimensions[row].height = 15
         row += 1
 
-    widths = [5, 38, 7, 8, 11, 11, 11, 11, 10, 10, 14]
+    widths = [5, 38, 7, 8, 11, 11, 11, 11, 14, 14, 14, 14, 12, 12, 12, 15]
     for i, w in enumerate(widths, 1):
         _set_col_width(ws, i, w)
     return ws
@@ -857,7 +874,7 @@ def _build_ce_project_indoor(wb, result, meta):
     ws = wb.create_sheet("CE - RF")
     ws.sheet_view.showGridLines = False
 
-    ws.merge_cells("A1:J1")
+    ws.merge_cells("A1:Q1")
     c = ws.cell(row=1, column=1,
                 value="Italian Planters LLC  ( Integrated Landscaping Solutions )")
     c.font = Font(name="Calibri", size=13, bold=True, color=WHITE)
@@ -865,7 +882,7 @@ def _build_ce_project_indoor(wb, result, meta):
     c.alignment = Alignment(horizontal="center", vertical="center")
     ws.row_dimensions[1].height = 26
 
-    ws.merge_cells("A2:J2")
+    ws.merge_cells("A2:Q2")
     c = ws.cell(row=2, column=1, value="COST ESTIMATION MODEL")
     c.font = Font(name="Calibri", size=11, bold=True, color=WHITE)
     c.fill = _fill(TEAL)
@@ -875,74 +892,97 @@ def _build_ce_project_indoor(wb, result, meta):
     ws.cell(row=3, column=1, value=f"CE - {meta['client']} - {meta['site']}").font = Font(name="Calibri",size=10,bold=True,color=DARK)
     ws.cell(row=4, column=1, value=f"As on {datetime.date.today().strftime('%B %d, %Y')}").font = Font(name="Calibri",size=10,color=DARK)
 
-    _header_row(ws, 5,
-                ["SL", "DESCRIPTION", "POT (AED)", "MAIN PLANT (AED)",
-                 "UNDER PLANTS (AED)", "SOIL & HYDROSTONE (AED)",
-                 "SUB-TOTAL POT", "SUB-TOTAL Plant+Soil+Mulch",
-                 "OH+Profit+Nego (AED)", "UNIT RATE (AED)", "QTY", "AMOUNT (AED)"],
-                height=36)
+    # Read markup percentages
+    oh_pot_pct = result.get("oh_pot_pct", 0.20)
+    oh_plant_pct = result.get("oh_plant_pct", 0.20)
+    profit_pct = result.get("profit_pct", 0.20)
+    nego_pct = result.get("nego_pct", 0.10)
+
+    _header_row(ws, 5, [
+        "SL", "DESCRIPTION", "POT (AED)", "MAIN PLANT (AED)",
+        "UNDER PLANTS (AED)", "SOIL & HYDROSTONE (AED)",
+        "SUB-TOTAL POT", "SUB-TOTAL Plant+Soil+Mulch",
+        f"Overhead ({oh_pot_pct*100:.0f}%) POT",
+        f"Overhead ({oh_plant_pct*100:.0f}%) Plants/Soil",
+        f"Profit ({profit_pct*100:.0f}%)",
+        f"Negotiation ({nego_pct*100:.0f}%)",
+        "Labor", "Delivery Charge", "TOTAL (AED)", "QTY", "AMOUNT (AED)"
+    ], height=36)
 
     NF = '#,##0.00'
     row = 6
     for i, item in enumerate(result["manifest"], 1):
-        markup = item["oh_pot"] + item["oh_plant"] + item["profit"] + item["nego"]
-        _data_row(ws, row,
-                  [i, item["description"],
-                   item["pot"], item["main_plant"],
-                   item["under_plants"], item["soil_hydrostone"],
-                   item["pot"],
-                   item["main_plant"]+item["under_plants"]+item["soil_hydrostone"],
-                   markup,
-                   item["unit_rate"], item["qty"], item["extended"]],
-                  align_map={3:"right",4:"right",5:"right",6:"right",
-                              7:"right",8:"right",9:"right",10:"right",
-                              11:"right",12:"right"},
-                  number_cols={3:NF,4:NF,5:NF,6:NF,7:NF,8:NF,9:NF,10:NF,12:NF},
+        cols_values = [
+            i,
+            item["description"],
+            item["pot"],
+            item["main_plant"],
+            item["under_plants"],
+            item["soil_hydrostone"],
+            f"=C{row}",
+            f"=D{row}+E{row}+F{row}",
+            f"=G{row}*{oh_pot_pct}",
+            f"=H{row}*{oh_plant_pct}",
+            f"=(G{row}+H{row})*{profit_pct}",
+            f"=(G{row}+H{row})*{nego_pct}",
+            item["labor"],
+            item["delivery"],
+            f"=SUM(G{row}:N{row})",
+            item["qty"],
+            f"=P{row}*O{row}"
+        ]
+        _data_row(ws, row, cols_values,
+                  align_map={3:"right", 4:"right", 5:"right", 6:"right",
+                             7:"right", 8:"right", 9:"right", 10:"right",
+                             11:"right", 12:"right", 13:"right", 14:"right",
+                             15:"right", 16:"right", 17:"right"},
+                  number_cols={3:NF, 4:NF, 5:NF, 6:NF, 7:NF, 8:NF, 9:NF, 10:NF,
+                               11:NF, 12:NF, 13:NF, 14:NF, 15:NF, 17:NF},
                   height=18)
         row += 1
 
-    _data_row(ws, row, ["", "Total Amount", "", "", "", "", "", "", "", "", "",
-                         result["gross_total"]],
-              bg=NAVY, bold=True, align_map={12:"right"}, number_cols={12:NF}, height=20)
-    for col in range(1,13):
-        ws.cell(row=row, column=col).font = Font(name="Calibri", size=11, bold=True, color=WHITE)
-    row += 1
-    _data_row(ws, row, ["", "Discount", "", "", "", "", "", "", "", "", "",
-                         result["discount"]],
-              align_map={12:"right"}, number_cols={12:NF}, height=17)
-    row += 1
-    _data_row(ws, row, ["", "Taxable Base", "", "", "", "", "", "", "", "", "",
-                         result["taxable_base"]],
-              bg=LIGHT, bold=True, align_map={12:"right"}, number_cols={12:NF}, height=18)
-    row += 1
-    _data_row(ws, row, ["", "VAT 5%", "", "", "", "", "", "", "", "", "",
-                         result["vat"]],
-              align_map={12:"right"}, number_cols={12:NF}, height=17)
-    row += 1
-    _data_row(ws, row, ["", "FINAL QUOTED AMOUNT", "", "", "", "", "", "", "", "", "",
-                         result["final_quote"]],
-              bg=TEAL, bold=True, align_map={12:"right"}, number_cols={12:NF}, height=22)
-    for col in range(1,13):
-        ws.cell(row=row, column=col).font = Font(name="Calibri", size=13, bold=True, color=WHITE)
-    row += 2
+    total_row = row
+    _data_row(ws, total_row, ["", "Total Amount", "", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=SUM(Q6:Q{total_row-1})"],
+              bg=NAVY, bold=True, align_map={17:"right"}, number_cols={17:NF}, height=20)
+    for col in range(1, 18):
+        ws.cell(row=total_row, column=col).font = Font(name="Calibri", size=11, bold=True, color=WHITE)
+
+    disc_row = total_row + 1
+    _data_row(ws, disc_row, ["", "Discount", "", "", "", "", "", "", "", "", "", "", "", "", "", "", result["discount"]],
+              align_map={17:"right"}, number_cols={17:NF}, height=17)
+
+    tax_row = total_row + 2
+    _data_row(ws, tax_row, ["", "Taxable Base", "", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=Q{total_row}-Q{disc_row}"],
+              bg=LIGHT, bold=True, align_map={17:"right"}, number_cols={17:NF}, height=18)
+
+    vat_row = total_row + 3
+    _data_row(ws, vat_row, ["", "VAT 5%", "", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=Q{tax_row}*0.05"],
+              align_map={17:"right"}, number_cols={17:NF}, height=17)
+
+    final_row = total_row + 4
+    _data_row(ws, final_row, ["", "FINAL QUOTED AMOUNT", "", "", "", "", "", "", "", "", "", "", "", "", "", "", f"=Q{tax_row}+Q{vat_row}"],
+              bg=TEAL, bold=True, align_map={17:"right"}, number_cols={17:NF}, height=22)
+    for col in range(1, 18):
+        ws.cell(row=final_row, column=col).font = Font(name="Calibri", size=13, bold=True, color=WHITE)
+    row = final_row + 2
 
     # Markup reference block
-    _section_title(ws, row, "MARKUP STRUCTURE REFERENCE", ncols=12, bg="FFF2CC")
+    _section_title(ws, row, "MARKUP STRUCTURE REFERENCE", ncols=17, bg="FFF2CC")
     row += 1
     markup_info = [
-        "Overhead on Pot:        20%  |  Overhead on Plant+Soil:  20%",
-        "Profit Margin:          20%  |  Negotiation Buffer:       10%",
+        f"Overhead on Pot:        {oh_pot_pct*100:.0f}%  |  Overhead on Plant+Soil:  {oh_plant_pct*100:.0f}%",
+        f"Profit Margin:          {profit_pct*100:.0f}%  |  Negotiation Buffer:       {nego_pct*100:.0f}%",
         "UAE VAT:                 5%  applied on taxable base",
     ]
     for line in markup_info:
-        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=12)
+        ws.merge_cells(start_row=row, start_column=1, end_row=row, end_column=17)
         c = ws.cell(row=row, column=1, value=line)
         c.font = Font(name="Calibri", size=9, italic=True, color="444444")
         c.alignment = Alignment(horizontal="left", vertical="center")
         ws.row_dimensions[row].height = 15
         row += 1
 
-    widths = [5, 36, 12, 14, 14, 18, 14, 22, 16, 12, 6, 14]
+    widths = [5, 36, 12, 14, 14, 18, 14, 22, 16, 16, 14, 14, 12, 12, 14, 8, 15]
     for i, w in enumerate(widths, 1):
         _set_col_width(ws, i, w)
     return ws

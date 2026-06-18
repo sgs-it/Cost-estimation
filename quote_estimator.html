@@ -424,11 +424,11 @@
     }
 
     .item-row.indoor-proj-row {
-      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr;
+      grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 36px;
     }
 
     .item-row.outdoor-proj-row {
-      grid-template-columns: 2fr 1fr 1fr 1fr 1fr 1fr 36px;
+      grid-template-columns: 2fr 0.8fr 0.8fr 0.8fr 0.8fr 0.8fr 36px;
     }
 
     .item-field input {
@@ -1065,7 +1065,7 @@
                 <input type="number" id="o-lawn" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
               </div>
             </div>
-            <div class="form-row">
+            <div class="form-row triple">
               <div class="field">
                 <label for="o-flowers">Seasonal Flowers (nos/rotation)</label>
                 <input type="number" id="o-flowers" min="0" value="0" placeholder="0" oninput="liveEstimate()" />
@@ -1073,6 +1073,10 @@
               <div class="field">
                 <label for="o-subcon">Subcontractor Cost (AED/yr, 0=auto)</label>
                 <input type="number" id="o-subcon" min="0" value="0" placeholder="0 = auto" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="o-total-space">Total Space Override (m²)</label>
+                <input type="number" id="o-total-space" min="0" placeholder="0 = use assets" oninput="liveEstimate()" />
               </div>
             </div>
             <div class="divider"></div>
@@ -1115,29 +1119,86 @@
             <div class="items-container" id="outdoor-proj-items"></div>
             <button class="btn-add-item" onclick="addOutdoorProjItem()">+ Add Work Item</button>
             <div class="divider"></div>
-            <div class="form-row">
+            <p class="section-title" style="margin-bottom:14px">Commercial &amp; Markup Settings</p>
+            <div class="form-row triple">
               <div class="field">
-                <label for="po-oh">Overhead % on Material+Plant</label>
-                <input type="number" id="po-oh" value="10" step="0.5" oninput="liveEstimate()" />
+                <label for="po-oh-mat">OH Material (%)</label>
+                <input type="number" id="po-oh-mat" value="20" step="0.5" oninput="liveEstimate()" />
               </div>
+              <div class="field">
+                <label for="po-oh-lab">OH Labor (%)</label>
+                <input type="number" id="po-oh-lab" value="20" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="po-suprv-pct">Supervision Rate (%)</label>
+                <input type="number" id="po-suprv-pct" value="25" step="0.5" oninput="liveEstimate()" />
+              </div>
+            </div>
+            <div class="form-row triple">
+              <div class="field">
+                <label for="po-profit-mat">Profit Material (%)</label>
+                <input type="number" id="po-profit-mat" value="20" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="po-profit-lab">Profit Labor (%)</label>
+                <input type="number" id="po-profit-lab" value="20" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="po-nego">Nego Buffer (%)</label>
+                <input type="number" id="po-nego" value="10" step="0.5" oninput="liveEstimate()" />
+              </div>
+            </div>
+            <div class="form-row">
               <div class="field">
                 <label for="po-discount">Discount (AED)</label>
                 <input type="number" id="po-discount" value="0" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <!-- Spacer -->
               </div>
             </div>
           </div>
 
           <!-- ── PANEL: PROJECT INDOOR ── -->
           <div class="panel" id="panel-project_indoor">
-            <p class="section-title" style="margin-bottom:14px">Bill of Quantities (Indoor Plant Supply &amp; Install)
-            </p>
+            <p class="section-title" style="margin-bottom:14px">Bill of Quantities (Indoor Plant Supply &amp; Install)</p>
             <div class="items-container" id="indoor-proj-items"></div>
             <button class="btn-add-item" onclick="addIndoorProjItem()">+ Add Item</button>
             <div class="divider"></div>
+            <p class="section-title" style="margin-bottom:14px">Commercial &amp; Markup Settings</p>
+            <div class="form-row triple">
+              <div class="field">
+                <label for="pi-oh-pot">OH Pot (%)</label>
+                <input type="number" id="pi-oh-pot" value="20" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="pi-oh-plant">OH Plant (%)</label>
+                <input type="number" id="pi-oh-plant" value="20" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <!-- spacer -->
+              </div>
+            </div>
+            <div class="form-row triple">
+              <div class="field">
+                <label for="pi-profit">Profit Margin (%)</label>
+                <input type="number" id="pi-profit" value="20" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <label for="pi-nego">Nego Buffer (%)</label>
+                <input type="number" id="pi-nego" value="10" step="0.5" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <!-- spacer -->
+              </div>
+            </div>
             <div class="form-row">
               <div class="field">
                 <label for="pi-discount">Discount (AED)</label>
                 <input type="number" id="pi-discount" value="0" oninput="liveEstimate()" />
+              </div>
+              <div class="field">
+                <!-- Spacer -->
               </div>
             </div>
           </div>
@@ -1317,6 +1378,14 @@
       <label>Soil+Hydro (AED)</label>
       <input type="number" min="0" value="0" oninput="liveEstimate()" />
     </div>
+    <div class="item-field">
+      <label>Labor (AED)</label>
+      <input type="number" min="0" value="0" oninput="liveEstimate()" />
+    </div>
+    <div class="item-field">
+      <label>Delivery (AED)</label>
+      <input type="number" min="0" value="0" oninput="liveEstimate()" />
+    </div>
   `;
       const rm = document.createElement('button');
       rm.className = 'btn-remove'; rm.textContent = '✕';
@@ -1338,6 +1407,7 @@
           lawn_m2: n('o-lawn'),
           seasonal_flowers: n('o-flowers'),
           subcontractor_annual: n('o-subcon') || undefined,
+          total_space: n('o-total-space') || undefined,
           margin_pct: n('o-margin') / 100,
           overhead_pct: n('o-overhead') / 100,
           nego_pct: n('o-nego') / 100,
@@ -1363,16 +1433,26 @@
         const items = [];
         rows.forEach(row => {
           const inputs = row.querySelectorAll('input');
+          const suprv_val = inputs[4].value.trim();
           items.push({
             description: inputs[0].value || 'Works',
             qty: parseFloat(inputs[1].value) || 0,
             cost: parseFloat(inputs[2].value) || 0,
             labor: parseFloat(inputs[3].value) || 0,
-            suprv: parseFloat(inputs[4].value) || 0,
+            suprv: suprv_val === "" ? null : (parseFloat(suprv_val) || 0),
             plant: parseFloat(inputs[5].value) || 0,
           });
         });
-        return { items, oh_pct: n('po-oh') / 100, discount: n('po-discount') };
+        return {
+          items,
+          oh_material_pct: n('po-oh-mat') / 100,
+          oh_labor_pct: n('po-oh-lab') / 100,
+          profit_material_pct: n('po-profit-mat') / 100,
+          profit_labor_pct: n('po-profit-lab') / 100,
+          nego_pct: n('po-nego') / 100,
+          suprv_pct: n('po-suprv-pct') / 100,
+          discount: n('po-discount')
+        };
       }
 
       if (currentJobType === 'project_indoor') {
@@ -1387,9 +1467,18 @@
             main_plant: parseFloat(inputs[3].value) || 0,
             under_plants: parseFloat(inputs[4].value) || 0,
             soil_hydrostone: parseFloat(inputs[5].value) || 0,
+            labor: parseFloat(inputs[6].value) || 0,
+            delivery: parseFloat(inputs[7].value) || 0,
           });
         });
-        return { items, discount: n('pi-discount') };
+        return {
+          items,
+          oh_pot_pct: n('pi-oh-pot') / 100,
+          oh_plant_pct: n('pi-oh-plant') / 100,
+          profit_pct: n('pi-profit') / 100,
+          nego_pct: n('pi-nego') / 100,
+          discount: n('pi-discount')
+        };
       }
       return {};
     }
@@ -1501,7 +1590,7 @@
       </div>
       <div class="metric-card">
         <div class="metric-label">Site Equiv. Area</div>
-        <div class="metric-value">${r.equiv_area_m2.toLocaleString()} m²</div>
+        <div class="metric-value">${r.equiv_area_m2.toLocaleString()} m²${r.total_space ? ` (Override: ${r.total_space.toLocaleString()} m²)` : ''}</div>
         <div class="metric-sub">FTE Required: ${r.fte_required}</div>
       </div>
       <div class="metric-card amber">
@@ -1626,7 +1715,11 @@
       <td style="text-align:right">${fmtN(m.labor)}</td>
       <td style="text-align:right">${fmtN(m.suprv)}</td>
       <td style="text-align:right">${fmtN(m.plant)}</td>
-      <td style="text-align:right">${fmtN(m.oh)}</td>
+      <td style="text-align:right">${fmtN(m.oh_material)}</td>
+      <td style="text-align:right">${fmtN(m.oh_labor)}</td>
+      <td style="text-align:right">${fmtN(m.profit_material)}</td>
+      <td style="text-align:right">${fmtN(m.profit_labor)}</td>
+      <td style="text-align:right">${fmtN(m.nego)}</td>
       <td>${fmtN(m.unit_rate)}</td>
       <td>${fmt(m.extended)}</td>
     </tr>`).join('');
@@ -1668,9 +1761,9 @@
       <div class="card-icon">📋</div>
       <div><div class="card-title">Itemised BOQ</div></div>
     </div>
-    <table class="manifest-table" style="min-width:700px">
+    <table class="manifest-table" style="min-width:1000px">
       <thead><tr>
-        <th>Description</th><th>Qty</th><th>Cost</th><th>Labor</th><th>Suprv</th><th>Plant</th><th>OH</th><th>Unit Rate</th><th>Extended</th>
+        <th>Description</th><th>Qty</th><th>Cost</th><th>Labor</th><th>Suprv</th><th>Plant</th><th>OH Mat</th><th>OH Lab</th><th>Profit Mat</th><th>Profit Lab</th><th>Nego</th><th>Unit Rate</th><th>Extended</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
@@ -1694,11 +1787,20 @@
       <td>${fmtN(m.main_plant)}</td>
       <td>${fmtN(m.under_plants)}</td>
       <td>${fmtN(m.soil_hydrostone)}</td>
-      <td>${fmtN(m.oh_pot + m.oh_plant)}</td>
-      <td>${fmtN(m.profit + m.nego)}</td>
+      <td>${fmtN(m.oh_pot)}</td>
+      <td>${fmtN(m.oh_plant)}</td>
+      <td>${fmtN(m.profit)}</td>
+      <td>${fmtN(m.nego)}</td>
+      <td>${fmtN(m.labor)}</td>
+      <td>${fmtN(m.delivery)}</td>
       <td>${fmtN(m.unit_rate)}</td>
       <td>${fmt(m.extended)}</td>
     </tr>`).join('');
+
+      const oh_pot_str = (r.oh_pot_pct * 100).toFixed(0);
+      const oh_plant_str = (r.oh_plant_pct * 100).toFixed(0);
+      const profit_str = (r.profit_pct * 100).toFixed(0);
+      const nego_str = (r.nego_pct * 100).toFixed(0);
 
       panel.innerHTML = `
   <div class="card">
@@ -1737,12 +1839,12 @@
       <div class="card-icon">📋</div>
       <div>
         <div class="card-title">Cost Estimation Model</div>
-        <div class="card-sub">OH: Pot 20% · Plant 20% | Profit 20% | Nego 10%</div>
+        <div class="card-sub">OH: Pot ${oh_pot_str}% · Plant ${oh_plant_str}% | Profit ${profit_str}% | Nego ${nego_str}%</div>
       </div>
     </div>
-    <table class="manifest-table" style="min-width:750px">
+    <table class="manifest-table" style="min-width:1050px">
       <thead><tr>
-        <th>Description</th><th>Qty</th><th>Pot</th><th>Main Plant</th><th>Under Plants</th><th>Soil+Hydro</th><th>OH Total</th><th>Profit+Nego</th><th>Unit Rate</th><th>Extended</th>
+        <th>Description</th><th>Qty</th><th>Pot</th><th>Main Plant</th><th>Under Plants</th><th>Soil+Hydro</th><th>OH Pot</th><th>OH Plant</th><th>Profit</th><th>Nego</th><th>Labor</th><th>Delivery</th><th>Unit Rate</th><th>Extended</th>
       </tr></thead>
       <tbody>${rows}</tbody>
     </table>
